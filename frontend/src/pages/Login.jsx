@@ -1,13 +1,18 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { ShopContext } from "../context/ShopContext";
+  import { useNavigate } from "react-router-dom";
 
 const Login = () => {
-  const { backendUrl, setToken, navigate } = useContext(ShopContext);
+  // const { token,backendUrl, setToken, navigate } = useContext(ShopContext);
+
+const { token, backendUrl, setToken } = useContext(ShopContext);
+
+const navigate = useNavigate();
 
   const [currentState, setCurrentState] = useState("Login");
-
+// const {token,setToken,navigate,backendUrl}=useContext(ShopContext)
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +41,9 @@ const Login = () => {
           currentState === "Login"
             ? "Login Successful"
             : "Account Created Successfully"
-        );
+        )
+      
+      
 
         navigate("/");
       } else {
@@ -46,7 +53,13 @@ const Login = () => {
       console.log(error);
       toast.error(error.response?.data?.message || error.message);
     }
-  };
+  }
+  // useEffect(()=>{
+  //   if(token){
+  //     navigate('/')
+
+  //   }
+  // },[token])
 
   return (
     <div className="flex items-center justify-center min-h-[80vh]">

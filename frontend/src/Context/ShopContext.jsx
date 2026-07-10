@@ -1,6 +1,7 @@
 import { createContext, useEffect, useState } from "react";
 import axios from "axios";
-
+import {toast} from 'react-toastify'
+import { useNavigate } from "react-router-dom";
 export const ShopContext = createContext();
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -11,6 +12,7 @@ const ShopContextProvider = ({ children }) => {
 
   const [products, setProducts] = useState([]);
   const [cartItems, setCartItems] = useState({});
+  const [token,setToken] = useState('')
 
   // Fetch Products
   const getProductsData = async () => {
@@ -95,7 +97,11 @@ const ShopContextProvider = ({ children }) => {
   useEffect(() => {
     getProductsData();
   }, []);
-
+// useEffect(()=>{
+//   if(!token && localStorage.getItem('token')){
+//     setToken(localStorage.getItem('token'))
+//   }
+// },[])
   const value = {
     products,
     currency,
@@ -107,6 +113,7 @@ const ShopContextProvider = ({ children }) => {
     getCartCount,
     getCartAmount,
     backendUrl,
+    setToken,token
   };
 
   return (
