@@ -1,70 +1,89 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useMemo, useState, useEffect } from "react";
 import { ShopContext } from "../context/ShopContext";
 import ProductItem from "../components/ProductItem";
 import Title from "../components/Title";
 
 const Collection = () => {
-  const { products } = useContext(ShopContext);
+  const { products, search, showSearch } = useContext(ShopContext);
 
   const [showFilter, setShowFilter] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState([]);
-  const [selectedSubCategories, setSelectedSubCategories] = useState([]);
+  const [category, setCategory] = useState([]);
+  const [subCategory, setSubCategory] = useState([]);
   const [sortType, setSortType] = useState("relevant");
 
-  const toggleCategory = (category) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((item) => item !== category)
-        : [...prev, category]
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const toggleCategory = (value) => {
+    setCategory((prev) =>
+      prev.includes(value)
+        ? prev.filter((item) => item !== value)
+        : [...prev, value]
     );
   };
 
-  const toggleSubCategory = (subcategory) => {
-    setSelectedSubCategories((prev) =>
-      prev.includes(subcategory)
-        ? prev.filter((item) => item !== subcategory)
-        : [...prev, subcategory]
+  const toggleSubCategory = (value) => {
+    setSubCategory((prev) =>
+      prev.includes(value)
+        ? prev.filter((item) => item !== value)
+        : [...prev, value]
     );
   };
 
   const filteredProducts = useMemo(() => {
-    let data = [...products];
+    let items = [...products];
 
-    if (selectedCategories.length) {
-      data = data.filter((item) =>
-        selectedCategories.includes(item.category)
+    // Search
+    if (showSearch && search.trim() !== "") {
+      items = items.filter((item) =>
+        item.name.toLowerCase().includes(search.toLowerCase())
       );
     }
 
-    if (selectedSubCategories.length) {
-      data = data.filter((item) =>
-        selectedSubCategories.includes(item.subCategory)
+    // Category
+    if (category.length > 0) {
+      items = items.filter((item) =>
+        category.includes(item.category)
       );
     }
 
+    // Sub Category
+    if (subCategory.length > 0) {
+      items = items.filter((item) =>
+        subCategory.includes(item.subCategory)
+      );
+    }
+
+    // Sorting
     switch (sortType) {
       case "low-high":
-        data.sort((a, b) => a.price - b.price);
+        items.sort((a, b) => a.price - b.price);
         break;
 
       case "high-low":
-        data.sort((a, b) => b.price - a.price);
+        items.sort((a, b) => b.price - a.price);
         break;
 
       case "latest":
-        data.sort((a, b) => b.date - a.date);
+        items.sort(
+          (a, b) => new Date(b.date || 0) - new Date(a.date || 0)
+        );
         break;
 
       default:
         break;
     }
 
-    return data;
-  }, [products, selectedCategories, selectedSubCategories,search,showSearch, category,subCategory,sortType]);
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+    return items;
+  }, [
+    products,
+    search,
+    showSearch,
+    category,
+    subCategory,
+    sortType,
+  ]);
 
   return (
     <div className="flex flex-col sm:flex-row gap-8 pt-10 border-t">
@@ -72,44 +91,46 @@ const Collection = () => {
       <aside className="min-w-60">
         <button
           onClick={() => setShowFilter(!showFilter)}
-          className="sm:hidden mb-4 border px-4 py-2 rounded"
+          className="sm:hidden border px-4 py-2 rounded mb-4"
         >
           Filters
         </button>
 
         <div className={`${showFilter ? "block" : "hidden"} sm:block`}>
+          {/* Category */}
           <div className="border p-4 mb-5">
             <h3 className="font-semibold mb-3">Categories</h3>
 
-            {["Men", "Women", "Kids"].map((category) => (
+            {["Men", "Women", "Kids"].map((item) => (
               <label
-                key={category}
-                className="flex items-center gap-2 mb-2"
+                key={item}
+                className="flex items-center gap-2 mb-2 cursor-pointer"
               >
                 <input
                   type="checkbox"
-                  checked={selectedCategories.includes(category)}
-                  onChange={() => toggleCategory(category)}
+                  checked={category.includes(item)}
+                  onChange={() => toggleCategory(item)}
                 />
-                {category}
+                {item}
               </label>
             ))}
           </div>
 
+          {/* Sub Category */}
           <div className="border p-4">
             <h3 className="font-semibold mb-3">Sub Categories</h3>
 
-            {["Topwear", "Bottomwear", "Winterwear"].map((sub) => (
+            {["Topwear", "Bottomwear", "Winterwear"].map((item) => (
               <label
-                key={sub}
-                className="flex items-center gap-2 mb-2"
+                key={item}
+                className="flex items-center gap-2 mb-2 cursor-pointer"
               >
                 <input
                   type="checkbox"
-                  checked={selectedSubCategories.includes(sub)}
-                  onChange={() => toggleSubCategory(sub)}
+                  checked={subCategory.includes(item)}
+                  onChange={() => toggleSubCategory(item)}
                 />
-                {sub}
+                {item}
               </label>
             ))}
           </div>
@@ -122,11 +143,11 @@ const Collection = () => {
           <Title text1="ALL" text2="COLLECTIONS" />
 
           <select
-            className="border px-3 py-2"
             value={sortType}
             onChange={(e) => setSortType(e.target.value)}
+            className="border px-3 py-2 rounded outline-none"
           >
-            <option value="relevant">Relevant</option>
+            <option value="relevant">Sort by: Relevant</option>
             <option value="latest">Latest</option>
             <option value="low-high">Price: Low to High</option>
             <option value="high-low">Price: High to Low</option>
@@ -134,16 +155,18 @@ const Collection = () => {
         </div>
 
         {filteredProducts.length === 0 ? (
-          <p className="text-gray-500">No products found.</p>
+          <div className="text-center py-16 text-gray-500">
+            No products found.
+          </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {filteredProducts.map((item) => (
               <ProductItem
-                key={product._id}
-                id={product._id}
-                image={product.image}
-                name={product.name}
-                price={product.price}
+                key={item._id}
+                id={item._id}
+                image={item.image}
+                name={item.name}
+                price={item.price}
               />
             ))}
           </div>

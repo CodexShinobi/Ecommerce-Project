@@ -1,57 +1,55 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext } from "react";
+import { useLocation } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
-import ProductItem from "./ProductItem";
-import Title from "./Title";
+import { assets } from "../assets/assets";
 
-const RelatedProducts = ({
-  category,
-  subCategory,
-  currentProductId,
-}) => {
-  const { products } = useContext(ShopContext);
+const SearchBar = () => {
+  const location = useLocation();
 
-  const [relatedProducts, setRelatedProducts] = useState([]);
+  const {
+    search,
+    setSearch,
+    showSearch,
+    setShowSearch,
+  } = useContext(ShopContext);
 
-  useEffect(() => {
-    if (products.length > 0) {
-      const filteredProducts = products
-        .filter(
-          (item) =>
-            item._id !== currentProductId &&
-            item.category === category &&
-            item.subCategory === subCategory
-        )
-        .slice(0, 4);
-
-      setRelatedProducts(filteredProducts);
-    }
-  }, [products, category, subCategory, currentProductId]);
-
-  if (relatedProducts.length === 0) return null;
+  // Show search bar only on Collection page
+  if (location.pathname !== "/collection" || !showSearch) {
+    return null;
+  }
 
   return (
-    <section className="my-20">
-      <div className="text-center mb-10">
-        <Title text1="RELATED" text2="PRODUCTS" />
-
-        <p className="mt-3 text-sm text-gray-600 max-w-2xl mx-auto">
-          You may also like these products from the same collection.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-        {relatedProducts.map((product) => (
-          <ProductItem
-            key={product._id}
-            id={product._id}
-            image={product.image}
-            name={product.name}
-            price={product.price}
+    <div className="border-y bg-gray-50 py-4">
+      <div className="max-w-2xl mx-auto flex items-center gap-3 px-4">
+        <div className="flex flex-1 items-center border border-gray-300 rounded-full bg-white px-4 py-3">
+          <input
+            type="text"
+            placeholder="Search for products..."
+            className="flex-1 bg-transparent outline-none text-sm"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
-        ))}
+
+          <img
+            src={assets.search_icon}
+            alt="Search"
+            className="w-5 h-5"
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setShowSearch(false);
+            setSearch("");
+          }}
+          className="text-2xl text-gray-500 hover:text-black"
+        >
+          ×
+        </button>
       </div>
-    </section>
+    </div>
   );
 };
 
-export default RelatedProducts;
+export default SearchBar;

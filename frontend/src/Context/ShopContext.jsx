@@ -1,7 +1,6 @@
 import { createContext, useEffect, useState } from "react";
 import axios from "axios";
 import {toast} from 'react-toastify'
-import { useNavigate } from "react-router-dom";
 export const ShopContext = createContext();
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -12,12 +11,18 @@ const ShopContextProvider = ({ children }) => {
 
   const [products, setProducts] = useState([]);
   const [cartItems, setCartItems] = useState({});
-  const [token,setToken] = useState('')
+  const [token, setToken] = useState("");
+
+  // Search
+  const [search, setSearch] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
 
   // Fetch Products
   const getProductsData = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/api/product/list`);
+      const response = await axios.get(
+        `${backendUrl}/api/product/list`
+      );
 
       if (response.data.success) {
         setProducts(response.data.products);
@@ -29,27 +34,43 @@ const ShopContextProvider = ({ children }) => {
     }
   };
 
-  // Add To Cart
-  const addToCart = (itemId, size) => {
-    if (!size) {
-      alert("Please select a size");
-      return;
+
+// Add To Cart
+const addToCart = async (itemId, size) => {
+  if (!size) {
+    toast.error("Please select a size");
+    return;
+  }
+
+  let cartData = structuredClone(cartItems);
+
+  if (!cartData[itemId]) {
+    cartData[itemId] = {};
+  }
+
+  cartData[itemId][size] = (cartData[itemId][size] || 0) + 1;
+
+  setCartItems(cartData);
+
+  if (token) {
+    try {
+      await axios.post(
+        backendUrl + "/api/cart/add",
+        { itemId, size },
+        {
+          headers: { token },
+        }
+      );
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || error.message);
     }
-
-    const cartData = structuredClone(cartItems);
-
-    if (!cartData[itemId]) {
-      cartData[itemId] = {};
-    }
-
-    cartData[itemId][size] = (cartData[itemId][size] || 0) + 1;
-
-    setCartItems(cartData);
-  };
+  }
+};
 
   // Update Quantity
   const updateQuantity = (itemId, size, quantity) => {
-    const cartData = structuredClone(cartItems);
+    let cartData = structuredClone(cartItems);
 
     if (quantity === 0) {
       delete cartData[itemId][size];
@@ -66,42 +87,50 @@ const ShopContextProvider = ({ children }) => {
 
   // Cart Count
   const getCartCount = () => {
-    let count = 0;
+    let totalCount = 0;
 
     for (const item in cartItems) {
       for (const size in cartItems[item]) {
-        count += cartItems[item][size];
+        totalCount += cartItems[item][size];
       }
     }
 
-    return count;
+    return totalCount;
   };
 
   // Cart Amount
   const getCartAmount = () => {
-    let total = 0;
-
+    let totalAmount = 0;
     for (const item in cartItems) {
-      const product = products.find((p) => p._id === item);
+      const product = products.find(
+        (product) => product._id === item
+      );
 
       if (!product) continue;
 
       for (const size in cartItems[item]) {
-        total += product.price * cartItems[item][size];
+        totalAmount +=
+          product.price * cartItems[item][size];
       }
     }
 
-    return total;
+    return totalAmount;
   };
 
+  // Load Products
   useEffect(() => {
     getProductsData();
   }, []);
-// useEffect(()=>{
-//   if(!token && localStorage.getItem('token')){
-//     setToken(localStorage.getItem('token'))
-//   }
-// },[])
+
+  // Restore Token
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+
+    if (storedToken) {
+      setToken(storedToken);
+    }
+  }, []);
+
   const value = {
     products,
     currency,
@@ -112,10 +141,13 @@ const ShopContextProvider = ({ children }) => {
     updateQuantity,
     getCartCount,
     getCartAmount,
-    backendUrl,
-    setToken,token
+    backendUrl, token,
+    setToken,
+    search,
+    setSearch,
+    showSearch,
+    setShowSearch,
   };
-
   return (
     <ShopContext.Provider value={value}>
       {children}
