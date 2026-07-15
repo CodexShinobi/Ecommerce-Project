@@ -1,44 +1,40 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { ShopContext } from "../context/ShopContext";
+import Title from "../components/Title";
 
-const Login = () => {
-  const { backendUrl, setToken, navigate } = useContext(ShopContext);
+const Orders = () => {
+  const { backendUrl, token, currency } = useContext(ShopContext);
 
-  const [currentState, setCurrentState] = useState("Login");
+  const [orders, setOrders] = useState([]);
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  const onSubmitHandler = async (e) => {
-    e.preventDefault();
-
+  const loadOrders = async () => {
     try {
-      const url =
-        currentState === "Login"
-          ? `${backendUrl}/api/user/login`
-          : `${backendUrl}/api/user/register`;
-
-      const payload =
-        currentState === "Login"
-          ? { email, password }
-          : { name, email, password };
-
-      const response = await axios.post(url, payload);
+      const response = await axios.post(
+        `${backendUrl}/api/order/userorders`,
+        {},
+        {
+          headers: { token },
+        }
+      );
 
       if (response.data.success) {
-        localStorage.setItem("token", response.data.token);
-        setToken(response.data.token);
+        let allItems = [];
 
-        toast.success(
-          currentState === "Login"
-            ? "Login Successful"
-            : "Account Created Successfully"
-        );
+        response.data.orders.forEach((order) => {
+          order.items.forEach((item) => {
+            allItems.push({
+              ...item,
+              status: order.status,
+              payment: order.payment,
+              paymentMethod: order.paymentMethod,
+              date: order.date,
+            });
+          });
+        });
 
-        navigate("/");
+        setOrders(allItems.reverse());
       } else {
         toast.error(response.data.message);
       }
@@ -48,91 +44,110 @@ const Login = () => {
     }
   };
 
+  useEffect(() => {
+    if (token) {
+      loadOrders();
+    }
+  }, [token]);
+
   return (
-    <div className="flex items-center justify-center min-h-[80vh]">
-      <form
-        onSubmit={onSubmitHandler}
-        className="flex flex-col gap-4 w-full sm:max-w-md border rounded-lg px-8 py-8 shadow-md"
-      >
-        <div className="text-center">
-          <h2 className="text-3xl font-semibold">
-            {currentState}
-          </h2>
+    <div className="border-t pt-16">
 
-          <p className="text-gray-500 mt-2">
-            {currentState === "Login"
-              ? "Welcome back! Login to continue."
-              : "Create your account to start shopping."}
-          </p>
-        </div>
+      <div className="text-2xl">
+        <Title text1="MY" text2="ORDERS" />
+      </div>
 
-        {currentState === "Sign Up" && (
-          <input
-            type="text"
-            placeholder="Full Name"
-            className="border rounded px-4 py-3 outline-none"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
+      <div className="mt-8">
+
+        {orders.length === 0 ? (
+          <div className="text-center py-20 text-gray-500">
+            You haven't placed any orders yet.
+          </div>
+        ) : (
+          orders.map((item, index) => (
+            <div
+              key={index}
+              className="py-4 border-t border-b text-gray-700 flex flex-col md:flex-row md:items-center md:justify-between gap-6"
+            >
+              {/* Product */}
+              <div className="flex items-start gap-6">
+                <img
+                  className="w-20 sm:w-24 rounded"
+                  src={item.image?.[0]}
+                  alt={item.name}
+                />
+
+                <div>
+                  <p className="font-medium text-base sm:text-lg">
+                    {item.name}
+                  </p>
+
+                  <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-600">
+                    <p>
+                      {currency}
+                      {item.price}
+                    </p>
+
+                    <p>Qty: {item.quantity}</p>
+
+                    <p>Size: {item.size}</p>
+                  </div>
+
+                  <p className="mt-2 text-sm">
+                    Date:{" "}
+                    <span className="text-gray-500">
+                      {new Date(item.date).toDateString()}
+                    </span>
+                  </p>
+
+                  <p className="text-sm">
+                    Payment:{" "}
+                    <span className="text-gray-500">
+                      {item.paymentMethod}
+                    </span>
+                  </p>
+
+                  <p className="text-sm">
+                    Payment Status:{" "}
+                    <span
+                      className={
+                        item.payment
+                          ? "text-green-600 font-medium"
+                          : "text-orange-500 font-medium"
+                      }
+                    >
+                      {item.payment ? "Paid" : "Pending"}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Status */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-green-500"></span>
+
+                  <p className="text-sm md:text-base">
+                    {item.status}
+                  </p>
+                </div>
+
+                <button
+                  onClick={loadOrders}
+                  className="border px-5 py-2 text-sm rounded hover:bg-gray-100 transition"
+                >
+                  Track Order
+                </button>
+
+              </div>
+            </div>
+          ))
         )}
 
-        <input
-          type="email"
-          placeholder="Email Address"
-          className="border rounded px-4 py-3 outline-none"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-
-        <input
-          type="password"
-          placeholder="Password"
-          className="border rounded px-4 py-3 outline-none"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-
-        <div className="flex justify-between text-sm text-gray-600">
-          <button
-            type="button"
-            className="hover:text-black"
-          >
-            Forgot Password?
-          </button>
-
-          {currentState === "Login" ? (
-            <button
-              type="button"
-              onClick={() => setCurrentState("Sign Up")}
-              className="hover:text-black"
-            >
-              Create Account
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setCurrentState("Login")}
-              className="hover:text-black"
-            >
-              Login Here
-            </button>
-          )}
-        </div>
-
-        <button
-          type="submit"
-          className="bg-black text-white py-3 rounded hover:bg-gray-800 transition"
-        >
-          {currentState === "Login"
-            ? "Login"
-            : "Create Account"}
-        </button>
-      </form>
+      </div>
     </div>
   );
 };
 
-export default Login;
+export default Orders;

@@ -32,8 +32,25 @@ const ShopContextProvider = ({ children }) => {
     } catch (error) {
       console.log(error);
     }
-  };
+  }
+  const getUserCart = async () => {
+  try {
+    const response = await axios.post(
+      backendUrl + "/api/cart/get",
+      {},
+      {
+        headers: { token },
+      }
+    );
 
+    if (response.data.success) {
+      setCartItems(response.data.cartData);
+    }
+  } catch (error) {
+    console.log(error);
+    toast.error(error.response?.data?.message || error.message);
+  }
+};
 
 // Add To Cart
 const addToCart = async (itemId, size) => {
@@ -69,7 +86,7 @@ const addToCart = async (itemId, size) => {
 };
 
   // Update Quantity
-  const updateQuantity = (itemId, size, quantity) => {
+  const updateQuantity = async (itemId, size, quantity) => {
     let cartData = structuredClone(cartItems);
 
     if (quantity === 0) {
@@ -83,6 +100,23 @@ const addToCart = async (itemId, size) => {
     }
 
     setCartItems(cartData);
+    if (token) {
+  try {
+    await axios.post(
+      backendUrl + "/api/cart/update",
+      {
+        itemId,
+        size,
+        quantity,
+      },
+      {
+        headers: { token },
+      }
+    );
+  } catch (error) {
+    console.log(error);
+  }
+}
   };
 
   // Cart Count
@@ -122,32 +156,45 @@ const addToCart = async (itemId, size) => {
     getProductsData();
   }, []);
 
-  // Restore Token
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
+  const storedToken = localStorage.getItem("token");
 
-    if (storedToken) {
-      setToken(storedToken);
-    }
-  }, []);
+  if (storedToken) {
+    setToken(storedToken);
+  }
+}, []);
+
+useEffect(() => {
+  if (token) {
+    getUserCart();
+  }
+}, [token]);
 
   const value = {
-    products,
-    currency,
-    delivery_fee,
-    cartItems,
-    setCartItems,
-    addToCart,
-    updateQuantity,
-    getCartCount,
-    getCartAmount,
-    backendUrl, token,
-    setToken,
-    search,
-    setSearch,
-    showSearch,
-    setShowSearch,
-  };
+  products,
+  currency,
+  delivery_fee,
+
+  cartItems,
+  setCartItems,
+
+  addToCart,
+  updateQuantity,
+  getUserCart,
+
+  getCartCount,
+  getCartAmount,
+
+  backendUrl,
+  token,
+  setToken,
+
+  search,
+  setSearch,
+
+  showSearch,
+  setShowSearch,
+};
   return (
     <ShopContext.Provider value={value}>
       {children}
