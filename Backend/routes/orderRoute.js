@@ -11,7 +11,7 @@ import {
 } from "../controllers/orderController.js";
 
 import authUser from "../middleware/auth.js";
-import adminAuth from "../middleware/adminAuth.js";
+import adminAuth from "../middleware/adminauth.js";
 
 const orderRouter = express.Router();
 
