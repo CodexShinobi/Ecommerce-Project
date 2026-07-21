@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { ShopContext } from "../context/ShopContext";
+import { ShopContext } from "../Context/ShopContext";
 import { assets } from "../assets/assets";
 
 const Navbar = () => {
@@ -107,18 +107,21 @@ const Navbar = () => {
             {token ? (
               <div className="group-hover:block hidden absolute dropdown-menu right-0 pt-4 z-20">
                 <div className="flex flex-col gap-2 w-36 py-3 px-5 bg-slate-100 text-gray-500 rounded shadow-lg">
-                  <p 
-                    onClick={() => navigate('C:\Users\NAVNEET PRAKASH\OneDrive\Documents\ecommerce project\frontend\src\pages\PlaceOrder.jsx')}
-                  className="cursor-pointer hover:text-black">
-                    My Profile
-                  </p>
-
+                  
                   <p
-                    onClick={() => navigate('C:\Users\NAVNEET PRAKASH\OneDrive\Documents\ecommerce project\frontend\src\pages\Orders.jsx')}
-                    className="cursor-pointer hover:text-black"
-                  >
-                    Orders
-                  </p>
+  onClick={() => navigate("/place-order")}
+  className="cursor-pointer hover:text-black"
+>
+  My Profile
+</p>
+
+<p
+  onClick={() => navigate("/orders")}
+  className="cursor-pointer hover:text-black"
+>
+  Orders
+</p>
+
 
                   <p
                     onClick={logout}
